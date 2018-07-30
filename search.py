@@ -66,6 +66,43 @@ def dfs(state, goal_state):
 class Stack(list): put = list.append
 
 
+##_________________________________ IDS ______________________________________
+#  iterative deepening search
+
+def ids(state, goal_state):
+    ## recursive depth limited search (reference AIMA)
+    cutoff = 'cutoff'
+    failure = 'failure'
+    def dls(state, limit):
+        if state == goal_state:
+            return state
+        elif limit == 0:
+            return cutoff
+        else:
+            cutoff_occurred = False
+            for state2 in state.next_states():
+                result = dls(state2, limit-1)
+                if result is cutoff:
+                    cutoff_occurred = True
+                elif result is not failure:
+                    return result
+            if cutoff_occurred:
+                return cutoff
+            else:
+                print("failure: ", state.G.matrix)
+                return failure
+    ## ~end
+    
+    depth = 0
+    while True:
+        print('depth: ', depth)
+        result = dls(state, depth)
+        if result is not cutoff:
+            return result
+        else:
+            depth += 1
+
+
 def randcases_test(search, n=50):
     goal_state = State(3)
     for _ in range(n):
@@ -95,7 +132,13 @@ def test_dfs():
     randcases_test(dfs)
     print('dfs test pass')
 
+def test_ids():
+    print('test ids ...')
+    randcases_test(ids)
+    print('ids test pass')
+
 
 if __name__ == '__main__':
     test_bfs()
     test_dfs()
+    test_ids()
