@@ -1,9 +1,13 @@
 import copy
 import random
 
+
+
 class State:
+    Counter = 0
 
     def __init__(self, m=1, n=1, s=""):
+        State.Counter += 1
         if n == 1:
             n = m
         self.G = Grid(m, n, s)
@@ -36,12 +40,52 @@ class State:
         actions.reverse()
         return actions
 
+    def signature(self):
+        return '_'.join(str(v) for row in self.G.matrix for v in row)
+
     def __hash__(self):
         return hash('_'.join(str(v) for row in self.G.matrix for v in row))
 
 
     def __eq__(self, state):
         return self.G.matrix == state.G.matrix
+
+
+
+class StatePool():
+    def __init__(self, factory, n=100):
+        self.factory = factory
+        self.pool = [factory() for _ in range(n)]
+
+    def get(self):
+        try:
+            return self.pool.pop()
+        except IndexError:
+            return self.factory()
+
+    def put(self, state):
+        self.pool.append(state)
+
+    def gen_next_states(self, state):
+        for v in ['up', 'down', 'left', 'right']:
+            s2 = self.clone(state)
+            # s2 = state.clone()
+            try:
+                s2.G.move(v)
+                s2.parent = state
+                s2.action = v
+                yield s2
+            except MoveOutOfBoundary:
+                self.put(s2)
+        
+    def clone(self, state):
+        s2 = self.get()
+        mat = state.G.matrix
+        rows, cols = len(mat), len(mat[0])
+        for i in range(rows):
+            for j in range(cols):
+                s2.G.matrix[i][j] = mat[i][j]
+        return s2
 
 
 def search(state, goal_state):
