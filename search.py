@@ -3,7 +3,8 @@ from state import State, Grid, StatePool
 
 ##_________________________________ BFS ______________________________________
 #
-def bfs(state, goal_state, pool=None):
+
+def bfs(state, goal_state):
     if state == goal_state:
         return state
     frontier = Queue([state])
@@ -65,9 +66,13 @@ class Stack(list): put = list.append
 
 def ids(state, goal_state, pool):
     ## recursive depth limited search (reference AIMA)
+    explored = set()
     cutoff = 'cutoff'
     failure = 'failure'
+
     def dls(state, limit):
+        nonlocal explored
+        explored.add(state.signature())
         if state == goal_state:
             return state
         elif limit == 0:
@@ -75,7 +80,13 @@ def ids(state, goal_state, pool):
         else:
             cutoff_occurred = False
             for state2 in pool.gen_next_states(state):
+                if state2.signature() in explored:
+                    state2.parent = None
+                    pool.put(state2)
+                    continue
                 result = dls(state2, limit-1)
+                # two cases to choose (1)optimal (2)check fewer states  -> [heuristic function]
+                explored -= {state2.signature()}
                 if result is cutoff:
                     state2.parent = None
                     pool.put(state2)
@@ -83,9 +94,9 @@ def ids(state, goal_state, pool):
                 elif result is not failure:
                     return result
                 else:
-                    print('---------------------------')
                     state2.parent = None
                     pool.put(state2)
+            ## Don't do it here
             # state.parent = None
             # pool.put(state)
             if cutoff_occurred:
@@ -97,6 +108,7 @@ def ids(state, goal_state, pool):
     depth = 0
     while True:
         print('depth: ', depth)
+        explored.clear()
         result = dls(state, depth)
         if result is not cutoff:
             return result
@@ -104,14 +116,15 @@ def ids(state, goal_state, pool):
             depth += 1
 
 
-def randcases_test(search, n=50):
-    pool = StatePool(lambda: State(3, 3))
+def randcases_test(search, n=20):
+    if search is ids:
+        search = lambda s, s0: ids(s, s0, StatePool(lambda: State(3, 3)))
     goal_state = State(3)
     for _ in range(n):
         s = Grid(3).shuffle(40).value()
         print(s)
         state = State(3, 3, s)
-        end = search(state, goal_state, pool)
+        end = search(state, goal_state)
         print(end.G.value(), end='\n\n')
         assert end == goal_state 
 
@@ -142,6 +155,6 @@ def test_ids():
 
 
 if __name__ == '__main__':
-    # test_bfs()
+    test_bfs()
     # test_dfs()
     test_ids()

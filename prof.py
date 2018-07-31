@@ -16,12 +16,10 @@ def profile(search, s):
     ps.print_stats()
     print(buf.getvalue())
     print(len(end.path()), end.path())
-    return pool
 
 
 if __name__ == '__main__':
     # s = '1_0_6_2_4_8_3_5_7'
     s = '3_2_5_7_8_0_4_1_6'
-    pool = profile(ids, s)
-    print(len(pool.pool))
+    profile(ids, s)
     print("Counter: ", State.Counter)
