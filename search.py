@@ -1,4 +1,6 @@
 import collections
+import random
+import math
 from heapq import heapify, heappop, heappush
 from state import State, Grid, StatePool
 
@@ -74,7 +76,7 @@ def ids(state, goal_state, pool):
 
     def dls(state, limit):
         nonlocal explored
-        explored.add(state.signature())
+        # explored.add(state.signature())
         if state == goal_state:
             return state
         elif limit == 0:
@@ -86,9 +88,11 @@ def ids(state, goal_state, pool):
                     state2.parent = None
                     pool.put(state2)
                     continue
+
+                explored.add(state.signature())
                 result = dls(state2, limit-1)
                 # two cases to choose (1)optimal (2)check fewer states  -> [heuristic function]
-                explored -= {state2.signature()}
+                explored.discard(state2.signature())
                 if result is cutoff:
                     state2.parent = None
                     pool.put(state2)
@@ -107,6 +111,7 @@ def ids(state, goal_state, pool):
                 return failure
     ## ~end
     
+    explored = set(state.signature())
     depth = 0
     while True:
         print('depth: ', depth)
@@ -120,7 +125,6 @@ def ids(state, goal_state, pool):
 
 ##_________________________________ A* ______________________________________
 #
-
 def Astar(state, goal_state):
     if state == goal_state:
         return state
@@ -148,6 +152,37 @@ class PriorityQueue:
     def pop(self):
         f, state = heappop(self.h)
         return state
+
+
+##_________________________________ IDA* ______________________________________
+#
+def IDAstar(state, goal_state):
+    pass
+
+##________________________________ Simulated Annealing _________________________
+#
+def SimulatedAnnealing(state, goal_state):
+    ## reference AIMA
+    current = state
+    t = 1
+    while True:
+        T = schedule(t)
+        if current == goal_state:
+            return current 
+        next_state = random.choice(list(current.next_states()))
+        dE = next_state.h() - current.h()
+        if dE < 0:
+            current = next_state
+        elif random.random() < P(dE, T):
+            current = next_state
+
+def schedule(t):
+    return 1/t
+
+def P(dE, T):
+    return 1 / (1 + math.e**(dE/T))
+    # return math.e**(-dE/T)
+    
 
 
 ##_________________________________ Test ______________________________________
