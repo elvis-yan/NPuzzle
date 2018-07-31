@@ -2,7 +2,6 @@ import copy
 import random
 
 
-
 class State:
     Counter = 0
 
@@ -13,10 +12,12 @@ class State:
         self.G = Grid(m, n, s)
         self.parent = None
         self.action = None
+        self.g = 0
 
     def clone(self):
         state = State()
         state.G.matrix = copy.deepcopy(self.G.matrix)
+        state.g = self.g
         return state
 
     def next_states(self):
@@ -26,6 +27,7 @@ class State:
                 s.G.move(v)
                 s.parent = self
                 s.action = v
+                s.g += 1
                 yield s
             except MoveOutOfBoundary:
                 pass
@@ -40,6 +42,22 @@ class State:
         actions.reverse()
         return actions
 
+    def h(self):
+        mat = self.G.matrix
+        rows, cols = len(mat), len(mat[0])
+        def _h(v, i, j):
+            i0, j0 = v//cols, v%cols
+            return abs(i-i0) + abs(j-j0)
+        result = 0
+        for i in range(rows):
+            for j in range(cols):
+                v = mat[i][j]
+                if v != 0:
+                    result += _h(v, i, j)
+        return result
+
+    def f(self): return self.g + self.h()
+
     def signature(self):
         return '_'.join(str(v) for row in self.G.matrix for v in row)
 
@@ -49,7 +67,9 @@ class State:
 
     def __eq__(self, state):
         return self.G.matrix == state.G.matrix
-
+    
+    def __lt__(self, state):
+        return self.f() < state.f()
 
 
 class StatePool():
@@ -206,6 +226,13 @@ def test():
 
     print('test pass')
 
+def test_h():
+    assert State(3, 3, '724506831').h() == 18
+    assert State(3, 3, '325780416').h() == 13
+    assert State(3, 3, '106248357').h() == 13
+    print('h_func test pass')
+
 
 if __name__ == '__main__':
     test()
+    test_h()

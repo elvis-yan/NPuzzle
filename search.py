@@ -1,5 +1,7 @@
 import collections
+from heapq import heapify, heappop, heappush
 from state import State, Grid, StatePool
+
 
 ##_________________________________ BFS ______________________________________
 #
@@ -8,16 +10,16 @@ def bfs(state, goal_state):
     if state == goal_state:
         return state
     frontier = Queue([state])
-    explored = set([state])
+    explored = set()
     while frontier:
         s = frontier.pop()
+        explored.add(s)
         for s2 in s.next_states():
             if s2 in explored or s2 in frontier: # not new
                 continue
             if s2 == goal_state:
                 return s2
             frontier.put(s2)
-            explored.add(s2)
     raise Exception('Never Get Here')
 
 
@@ -50,13 +52,13 @@ def dfs(state, goal_state):
     explored = set()
     while frontier:
         s = frontier.pop()
+        explored.add(s)
         for s2 in s.next_states():
             if s2 in explored:
                 continue
             if s2 == goal_state:
                 return s2
             frontier.put(s2)
-            explored.add(s2)
 
 class Stack(list): put = list.append
 
@@ -116,19 +118,54 @@ def ids(state, goal_state, pool):
             depth += 1
 
 
-def randcases_test(search, n=20):
+##_________________________________ A* ______________________________________
+#
+
+def Astar(state, goal_state):
+    if state == goal_state:
+        return state
+    ## for simplicity 'explored' contains 'frontier'
+    frontier = PriorityQueue([state])
+    explored = {state: 0} # state: actual cost
+    while frontier:
+        s = frontier.pop()
+        if s == goal_state:
+            return s
+        for s2 in s.next_states():
+            if s2 not in explored or s2.g < explored[s2]:
+                frontier.put(s2)
+                explored[s2] = s2.g
+    
+
+class PriorityQueue:
+    def __init__(self, iterable):
+        self.h = list((state.f(), state) for state in iterable)
+        heapify(self.h)
+    
+    def put(self, state):
+        heappush(self.h, (state.f(), state))
+    
+    def pop(self):
+        f, state = heappop(self.h)
+        return state
+
+
+##_________________________________ Test ______________________________________
+#
+
+def randcases_test(search, n=3, n_shuffle=50, times=20):
     if search is ids:
-        search = lambda s, s0: ids(s, s0, StatePool(lambda: State(3, 3)))
-    goal_state = State(3)
-    for _ in range(n):
-        s = Grid(3).shuffle(40).value()
+        search = lambda s, s0: ids(s, s0, StatePool(lambda: State(n, n)))
+    goal_state = State(n)
+    for _ in range(times):
+        s = Grid(n).shuffle(n_shuffle).value()
         print(s)
-        state = State(3, 3, s)
+        state = State(n, n, s)
         end = search(state, goal_state)
         print(end.G.value(), end='\n\n')
         assert end == goal_state 
 
-G = None
+
 def test_bfs():
     print('test bfs ...')
     # state = State(Grid(3, 3))
@@ -153,8 +190,14 @@ def test_ids():
     randcases_test(ids)
     print('ids test pass')
 
+def test_astar():
+    print('test astar ...')
+    randcases_test(Astar, n=4, n_shuffle=100)
+    print('astar test pass')
+
 
 if __name__ == '__main__':
-    test_bfs()
+    # test_bfs()
     # test_dfs()
-    test_ids()
+    # test_ids()
+    test_astar()
