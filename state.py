@@ -62,7 +62,17 @@ class State:
         return '_'.join(str(v) for row in self.G.matrix for v in row)
 
     def __hash__(self):
-        return hash('_'.join(str(v) for row in self.G.matrix for v in row))
+        mat = self.G.matrix
+        rows, cols = len(mat), len(mat[0])
+        BASE = rows * cols
+        factor = 1
+        result = 0
+        for i in range(rows):
+            for j in range(cols):
+                v = mat[i][j]
+                result += v * factor
+                factor *= BASE
+        return result
 
 
     def __eq__(self, state):
@@ -94,6 +104,7 @@ class StatePool():
                 s2.G.move(v)
                 s2.parent = state
                 s2.action = v
+                s2.g = state.g + 1
                 yield s2
             except MoveOutOfBoundary:
                 self.put(s2)
@@ -114,7 +125,7 @@ def search(state, goal_state):
     #         gen_path()
     #         return
 
-    # bfs dfs idas a_star ida_star
+    # bfs dfs ids a_star ida_star
     pass
 
 

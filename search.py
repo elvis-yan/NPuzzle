@@ -156,8 +156,40 @@ class PriorityQueue:
 
 ##_________________________________ IDA* ______________________________________
 #
-def IDAstar(state, goal_state):
-    pass
+def IDAstar(state, goal_state, pool):
+    def dls(state, limit, explored):
+        if state == goal_state:
+            return state, 0
+        if state.f() > limit:
+            return None, state.f()
+        successors = list(pool.gen_next_states(state))
+        successors.sort(key=lambda state: state.f())
+        _min = float('inf')
+        for s in successors:
+            if s in explored:
+                s.parent = None
+                s.g = 0
+                pool.put(s)
+                continue
+            explored.add(s)
+            result, limit2 = dls(s, limit, explored)
+            if result:
+                return result, 0
+            if limit2 < _min:
+                _min = limit2
+            explored.discard(s)
+            s.parent = None
+            s.g = 0
+            pool.put(s)
+        return None, _min
+    
+    limit = state.f()
+    explored = {state}
+    while True:
+        # print(limit)
+        result, limit = dls(state, limit, explored)
+        if result:
+            return result
 
 ##________________________________ Simulated Annealing _________________________
 #
@@ -189,8 +221,9 @@ def P(dE, T):
 #
 
 def randcases_test(search, n=3, n_shuffle=50, times=20):
-    if search is ids:
-        search = lambda s, s0: ids(s, s0, StatePool(lambda: State(n, n)))
+    if search in (ids, IDAstar):
+        fn = search
+        search = lambda s, s0: fn(s, s0, StatePool(lambda: State(n, n)))
     goal_state = State(n)
     for _ in range(times):
         s = Grid(n).shuffle(n_shuffle).value()
@@ -230,9 +263,15 @@ def test_astar():
     randcases_test(Astar, n=4, n_shuffle=100)
     print('astar test pass')
 
+def test_idastar():
+    print('test idastar ...')
+    randcases_test(IDAstar, n=4, n_shuffle=80)
+    print('idastar test pass')
+
 
 if __name__ == '__main__':
     # test_bfs()
     # test_dfs()
     # test_ids()
-    test_astar()
+    # test_astar()
+    test_idastar()
