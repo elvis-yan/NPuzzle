@@ -21,7 +21,7 @@ class State:
         return state
 
     def next_states(self):
-        for v in ['up', 'down', 'left', 'right']:
+        for v in self.remove_comeback_action(['up', 'down', 'left', 'right']):
             s = self.clone()
             try:
                 s.G.move(v)
@@ -31,6 +31,17 @@ class State:
                 yield s
             except MoveOutOfBoundary:
                 pass
+
+    def remove_comeback_action(self, actions):
+        if self is None or self.action is None:
+            return actions
+        result = []
+        pa = self.action
+        _a = {'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left'}[pa]
+        for a in actions:
+            if a != _a:
+                result.append(a)
+        return result
 
     def path(self):
         actions = []
@@ -232,7 +243,7 @@ def test():
     s = State(3)
     s_right = list(s.next_states())[1]
     s_down = list(s_right.next_states())[0]
-    s_left = list(s_down.next_states())[2]
+    s_left = list(s_down.next_states())[1]
     assert s_left.path() == ['right', 'down', 'left']
 
     print('test pass')
